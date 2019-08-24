@@ -10,16 +10,23 @@ using std::fstream;
 using std::ios;
 using std::istreambuf_iterator;
 using std::to_string;
+using std::stoi;
 
 
-void steganographize(const string& filePath, const string& message);
+void steg(const string& filePath, const string& message);
+string unsteg(const string& filePath);
 string readfileContents(const string& filePath);
 void writeAlteredContents(const string& filePath, const string& alteredContents);
 
-void steganographize(const string& filePath, const string& message) {
+
+/**
+ * Inserts the message into the image
+ */
+void steg(const string& filePath, const string& message) {
     string fileContents = readfileContents(filePath);
     int charSeparation = fileContents.length() / message.length();
 
+    fileContents.append(" ");
     fileContents.append(std::to_string(message.length()));
 
     for (int i = 0; i < message.length(); ++i) {
@@ -27,6 +34,26 @@ void steganographize(const string& filePath, const string& message) {
     }
 
     writeAlteredContents(filePath, fileContents);
+}
+
+
+/**
+ * Recovers the message from the image
+ */
+string unsteg(const string& filePath) {
+    string fileContents = readfileContents(filePath);
+
+    int messageLength = stoi(fileContents.substr(fileContents.find_last_of(' ')));
+    int charSeparation = (fileContents.length() - messageLength) / messageLength;
+    
+    string message;
+    message.clear();
+
+    for (int i = 0; i < messageLength; ++i) {
+        message.push_back(fileContents.at(charSeparation * i + 2));
+    }
+
+    return message;
 }
 
 
@@ -57,6 +84,7 @@ void writeAlteredContents(const string& filePath, const string& alteredContents)
     file.close();
 }
 
+
 int main(int argc, char* argv[]) {    
     if (argc < 2) {
         cout << endl;
@@ -80,7 +108,8 @@ int main(int argc, char* argv[]) {
 
     string filePath = argv[1];
     if (argc == 2) {
-        // decode;
+        cout << "Message:" << endl;
+        cout << unsteg(filePath) << endl;
     }
     else {
         string message;
@@ -92,7 +121,7 @@ int main(int argc, char* argv[]) {
         }
         message.pop_back();
 
-        steganographize(filePath, message);
+        steg(filePath, message);
     }
 
     return 0;
